@@ -6,8 +6,13 @@
 	"version": "1.0",
 	
 	"permissions": [
+
 	],
 	"browser_action": {
 		"default_icon": "logo.png"
+	},
+	"background": {
+		"scripts": ["selfoss.js"],
+		"persistent": false
 	}
 }
