@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+	<title>selfoss Chrome Options</title>
+	<link rel="stylesheet" type="text/css" href="style.css" />
+  </head>
+  <body>
+	<h1>selfoss Chrome Options</h1>
+	<h2>About</h2>
+	<p>
+	  This simple Chrome extension shows a small badge to keep track of new intems in your <a href="http://selfoss.aditu.de/">selfoss</a> stream.
+	</p>
+	<h2>General Settings</h2>
+	<div class="input">
+	  <label for="url">selfoss URL:</label>
+	  <input type="text" name="url" id="url" placeholder="selfoss URL" />
+	</div>
+	<div class="input">
+	  <label for="period">Refresh interval (minutes):</label>
+	  <input type="number" name="period" id="period" placeholder="Refresh Interval" />
+	</div>
+	<h2>Authentication</h2>
+	<div class="input">
+	  <label for="username">Username:</label>
+	  <input type="text" name="username" id="username" placeholder="Username" />
+	</div>
+	<div class="input">
+	  <label for="password">Password:</label>
+	  <input type="password" name="password" id="password" placeholder="Password" />
+	</div>
+	<h2>Advanced</h2>
+	<div class="advanced">
+	  <div class="input">
+		<label for="badgeStatusBackground">Badge color:</label>
+		<input type="color" name="badgeStatusBackground" id="badgeStatusBackground" />
+	  </div>
+	  <div class="input">
+		<label for="badgeNoStatusBackground">Badge color (disabled):</label>
+		<input type="color" name="badgeNoStatusBackground" id="badgeNoStatusBackground" />
+	  </div>
+	</div>
+
+	<div class="submit">
+	  <input type="button" id="saveBtn" value="Save settings" />
+	  <div class="status"></div>
+	</div>
+
+	<div class="logo">
+	  <img src="logo-text-black.png" alt="selfoss logo" />
+	</div>
+
+	<script src="jquery-2.0.2.min.js"></script>
+	<script src="options.js"></script>
+  </body>
+</html>

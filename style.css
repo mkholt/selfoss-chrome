@@ -1,0 +1,45 @@
+body {
+	font-family: OpenSans, Arial, sans-serif;
+	font-size: 16px;
+	background: url('bg.gif');
+}
+
+h1 {
+	text-align: right;
+	border-bottom: 1px solid #272325;
+}
+
+div.logo {
+	position: fixed;
+	right: 1em;
+	bottom: 1em;
+}
+
+input[type=text],
+input[type=password],
+input[type=number],
+input[type=color] {
+	border: 1px solid #A0A0A0;
+	padding: 5px;
+	width: 250px;
+}
+
+div.submit {
+	position: absolute;
+	top: 5em;
+	right: 1em;
+}
+
+div.submit input {
+	width: 150px;
+	height: 50px;
+	border: 1px solid #A0A0A0;
+	background: #fff;
+}
+
+div.submit .status {
+	font-size: .9em;
+	text-align: right;
+	color: #A0A0A0;
+	font-style: italic;
+}
