@@ -1,0 +1,2 @@
+selfoss-chrome
+==============
