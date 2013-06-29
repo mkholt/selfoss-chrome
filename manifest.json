@@ -5,9 +5,9 @@
 	"description": "A simple Chrome extension, showing a small badge to keep track of new items in your selfoss stream.",
 	"version": "1.0",
 	"icons": {
-		"16": "logo-16.png",
-		"48": "logo-48.png",
-		"128": "logo-128.png"
+		"16": "images/logo-16.png",
+		"48": "images/logo-48.png",
+		"128": "images/logo-128.png"
 	},
 	"minimum_chrome_version": "22",
 	
@@ -17,7 +17,7 @@
 		"*://*/"
 	],
 	"browser_action": {
-		"default_icon": "logo.png"
+		"default_icon": "images/logo.png"
 	},
 	"background": {
 		"scripts": ["selfoss.js"],
