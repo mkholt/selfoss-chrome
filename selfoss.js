@@ -227,9 +227,13 @@ var selfoss = (function() {
 					return;
 				}
 			}
+
 			// It wasn't open, or we couldn't find it. Open a new tab
 			chrome.tabs.create({'url': url});
 		});
+
+		// Now that the user has called attention to us, refresh the badge
+		updateCount(updateIcon, updateIcon);
 	}
 
 	return {
