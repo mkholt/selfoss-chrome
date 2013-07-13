@@ -8,12 +8,12 @@ var o = (function($) {
 
 	function setValues(s)
 	{
-		$("#url").val(s.url);
-		$("#period").val(s.alarmPeriod);
-		$("#username").val(s.username);
-		$("#password").val(s.password);
-		$("#badgeStatusBackground").val(s.badgeStatusBackground);
-		$("#badgeNoStatusBackground").val(s.badgeNoStatusBackground);
+		$("#url").val(s.sync.url);
+		$("#period").val(s.sync.alarmPeriod);
+		$("#username").val(s.local.username);
+		$("#password").val(s.local.password);
+		$("#badgeStatusBackground").val(s.sync.badgeStatusBackground);
+		$("#badgeNoStatusBackground").val(s.sync.badgeNoStatusBackground);
 	}
 
 	function saveSettings()
@@ -21,12 +21,16 @@ var o = (function($) {
 		$(".submit .status").text('Saving...');
 		$("#saveBtn").attr('disabled', true);
 		s = {
-			"url": $("#url").val(),
-			"alarmPeriod": $("#period").val(),
-			"username": $("#username").val(),
-			"password": $("#password").val(),
-			"badgeStatusBackground": $("#badgeStatusBackground").val(),
-			"badgeNoStatusBackground": $("#badgeNoStatusBackground").val()
+			"sync": {
+				"url": $("#url").val(),
+				"alarmPeriod": $("#period").val(),
+				"badgeStatusBackground": $("#badgeStatusBackground").val(),
+				"badgeNoStatusBackground": $("#badgeNoStatusBackground").val()
+			},
+			"local": {
+				"username": $("#username").val(),
+				"password": $("#password").val()
+			}	
 		}
 		chrome.runtime.sendMessage({"settings": s}, function(response) {
 			$(".submit .status").text('Settings saved');

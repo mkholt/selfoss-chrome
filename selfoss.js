@@ -6,55 +6,107 @@ var selfoss = (function() {
 	
 	var params = {};
 
+	function onInstalled(details)
+	{
+		console.log("onInstalled");
+
+		if (details.reason == "update")
+		{
+			console.log("updated, old version: " + details.previousVersion);
+			if (details.previousVersion == '1.0')
+			{
+				console.log("Migrating from localStorage");
+				var s = JSON.parse(localStorage.getItem("settings"));
+				if (!s) return;
+
+				var sync = {
+					"url": s.url,
+					"alarmPeriod": s.alarmPeriod,
+					"badgeStatusBackground": s.badgeStatusBackground,
+					"badgeNoStatusBackground": s.badgeNoStatusBackground
+				};
+				var local = {
+					"username": s.username,
+					"password": s.password,
+				};
+
+				chrome.storage.sync.set(sync);
+				chrome.storage.local.set(local);
+				localStorage.removeItem("settings");
+			}
+		}
+	}
+
 	function onInit()
 	{
 		console.log("onInit");
-
-		// Load settings from localStorage
-		settings = JSON.parse(localStorage.getItem("settings"));
-		if (!settings)
-		{
-			settings = defaultSettings();
-			openTab();
-		}
-		else
-		{
-			statsURL = settings.url + "/stats";
-			loginURL = settings.url + "/login";
-		}
-
-		// Start listening for messages from the settings
-		chrome.runtime.onMessage.addListener(onMessage);
-
-		// Set the initial icon until first update
-		updateIcon();
-
-		// Start listening for alarm and set it up
-		chrome.alarms.onAlarm.addListener(onAlarm);
-
-		// When the icon is clicked, open the selfoss URL
-		chrome.browserAction.onClicked.addListener(openTab);
-
-		if (settings.url)
-		{		
-			// Start by initializing a request
-			updateCount(updateIcon, updateIcon);
 		
-			// Initialize alarm
-			setupAlarm();
-		}
+		chrome.runtime.onInstalled.addListener(onInstalled);
+		chrome.storage.onChanged.addListener(onStorageChange);
+
+		// Load settings from Chrome Storage
+		syncSettings = chrome.storage.sync.get(null, function(synced) {
+			settings = {};
+			if (synced)
+			{
+				settings.sync = synced;
+			}
+
+			localSettings = chrome.storage.local.get(null, function(local) {
+				if (local)
+				{
+					settings.local = local;
+				}
+
+				if (!settings)
+				{
+					settings = defaultSettings();
+					openTab();
+				}
+				else
+				{
+					statsURL = settings.sync.url + "/stats";
+					loginURL = settings.sync.url + "/login";
+				}
+
+				// Start listening for messages from the settings
+				chrome.runtime.onMessage.addListener(onMessage);
+
+				// Set the initial icon until first update
+				updateIcon();
+
+				// Start listening for alarm and set it up
+				chrome.alarms.onAlarm.addListener(onAlarm);
+
+				// When the icon is clicked, open the selfoss URL
+				chrome.browserAction.onClicked.addListener(openTab);
+
+				if (settings.sync.url)
+				{		
+					// Start by initializing a request
+					updateCount(updateIcon, updateIcon);
+					
+					// Initialize alarm
+					setupAlarm();
+				}
+			});
+		});
 	}
 	
 	function defaultSettings()
 	{
 		// No settings saved, initialize default settings
 		s = {
-			"url": "",
-			"alarmPeriod": 5,
-			"username": "",
-			"password": "",
-			"badgeStatusBackground": "#D00018",
-			"badgeNoStatusBackground": "#A0A0A0"
+			"sync": {
+				"url": "",
+				"alarmPeriod": 5,
+				"badgeStatusBackground": "#D00018",
+				"badgeNoStatusBackground": "#A0A0A0"
+			},
+			"local": {
+				"username": "",
+				"password": ""
+			}
 		};
 
 		return s;
@@ -63,7 +115,36 @@ var selfoss = (function() {
 	function setupAlarm()
 	{
 		console.log("setupAlarm");
-		chrome.alarms.create("refresh", {'delayInMinutes': 1, 'periodInMinutes': parseInt(settings.alarmPeriod)});
+		chrome.alarms.create("refresh", {'delayInMinutes': 1, 'periodInMinutes': parseInt(settings.sync.alarmPeriod)});
+	}
+
+	function onStorageChange(changes, areaName)
+	{
+		console.log("onStorageChange");
+
+		for (k in changes)
+		{
+			settings[areaName][k] = changes[k].newValue;
+		}
+		
+		handleNewSettings();
+	}
+
+	function handleNewSettings()
+	{
+		console.log("handleNewSettings");
+		if (settings.sync.url)
+		{		
+			statsURL = settings.sync.url + "/stats";
+			loginURL = settings.sync.url + "/login";
+			params.username = settings.local.username;
+			params.password = settings.local.password;
+
+			updateCount(updateIcon, updateIcon);
+
+			chrome.alarms.clear("refresh");
+			setupAlarm();
+		}
 	}
 
 	function updateSettings(s)
@@ -71,20 +152,10 @@ var selfoss = (function() {
 		console.log("updateSettings");
 		settings = s;
 
-		if (settings.url)
-		{		
-			statsURL = settings.url + "/stats";
-			loginURL = settings.url + "/login";
-			params.username = s.username;
-			params.password = s.password;
-
-			updateCount(updateIcon, updateIcon);
-
-			chrome.alarms.clear("refresh");
-			setupAlarm();
-		}
+		handleNewSettings();
 		
-		localStorage.setItem("settings", JSON.stringify(s));
+		chrome.storage.sync.set(s.sync);
+		chrome.storage.local.set(s.local);
 	}
 	
 	function onMessage(request, sender, sendResponse)
@@ -198,11 +269,11 @@ var selfoss = (function() {
 		console.log("updateIcon");
 
 		var t = '';
-		var c = settings.badgeStatusBackground;
+		var c = settings.sync.badgeStatusBackground;
 		if (typeof count == 'undefined')
 		{
 			t = '?';
-			c = settings.badgeNoStatusBackground;
+			c = settings.sync.badgeNoStatusBackground;
 		}
 		else t = (count > 0) ? "" + count : '';
 		
@@ -216,7 +287,7 @@ var selfoss = (function() {
 
 		chrome.tabs.getAllInWindow(undefined, function(tabs) {
 			// See if it's already open
-			var url = (settings.url) ? settings.url : chrome.runtime.getURL("options.html");
+			var url = (settings.sync.url) ? settings.sync.url : chrome.runtime.getURL("options.html");
 
 			for (var i = 0, tab; tab = tabs[i]; i++)
 			{
