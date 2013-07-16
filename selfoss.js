@@ -16,23 +16,35 @@ var selfoss = (function() {
 			if (details.previousVersion == '1.0')
 			{
 				console.log("Migrating from localStorage");
-				var s = JSON.parse(localStorage.getItem("settings"));
-				if (!s) return;
+				
+				// First, let's see if we already have migrated on another computer
+				chrome.storage.sync.get(null, function(synced) {
+					if (synced)
+					{
+						console.log("Already migrated on other system.");
+						onSyncedSettings(synced);
 
-				var sync = {
-					"url": s.url,
-					"alarmPeriod": s.alarmPeriod,
-					"badgeStatusBackground": s.badgeStatusBackground,
-					"badgeNoStatusBackground": s.badgeNoStatusBackground
-				};
-				var local = {
-					"username": s.username,
-					"password": s.password,
-				};
+						return;
+					}
 
-				chrome.storage.sync.set(sync);
-				chrome.storage.local.set(local);
-				localStorage.removeItem("settings");
+					var s = JSON.parse(localStorage.getItem("settings"));
+					if (!s) return;
+					
+					var sync = {
+						"url": s.url,
+						"alarmPeriod": s.alarmPeriod,
+						"badgeStatusBackground": s.badgeStatusBackground,
+						"badgeNoStatusBackground": s.badgeNoStatusBackground
+					};
+					var local = {
+						"username": s.username,
+						"password": s.password,
+					};
+
+					chrome.storage.sync.set(sync);
+					chrome.storage.local.set(local);
+					localStorage.removeItem("settings");
+				});
 			}
 		}
 	}
@@ -45,51 +57,56 @@ var selfoss = (function() {
 		chrome.storage.onChanged.addListener(onStorageChange);
 
 		// Load settings from Chrome Storage
-		syncSettings = chrome.storage.sync.get(null, function(synced) {
-			settings = {};
-			if (synced)
+		syncSettings = chrome.storage.sync.get(null, onSyncedSettings);
+	}
+
+	function onSyncedSettings(synced)
+	{
+		console.log("onSyncedSettings");
+
+		settings = {};
+		if (synced)
+		{
+			settings.sync = synced;
+		}
+
+		localSettings = chrome.storage.local.get(null, function(local) {
+			if (local)
 			{
-				settings.sync = synced;
+				settings.local = local;
 			}
 
-			localSettings = chrome.storage.local.get(null, function(local) {
-				if (local)
-				{
-					settings.local = local;
-				}
+			if (!settings)
+			{
+				settings = defaultSettings();
+				openTab();
+			}
+			else
+			{
+				statsURL = settings.sync.url + "/stats";
+				loginURL = settings.sync.url + "/login";
+			}
 
-				if (!settings)
-				{
-					settings = defaultSettings();
-					openTab();
-				}
-				else
-				{
-					statsURL = settings.sync.url + "/stats";
-					loginURL = settings.sync.url + "/login";
-				}
+			// Start listening for messages from the settings
+			chrome.runtime.onMessage.addListener(onMessage);
 
-				// Start listening for messages from the settings
-				chrome.runtime.onMessage.addListener(onMessage);
+			// Set the initial icon until first update
+			updateIcon();
 
-				// Set the initial icon until first update
-				updateIcon();
+			// Start listening for alarm and set it up
+			chrome.alarms.onAlarm.addListener(onAlarm);
 
-				// Start listening for alarm and set it up
-				chrome.alarms.onAlarm.addListener(onAlarm);
+			// When the icon is clicked, open the selfoss URL
+			chrome.browserAction.onClicked.addListener(openTab);
 
-				// When the icon is clicked, open the selfoss URL
-				chrome.browserAction.onClicked.addListener(openTab);
-
-				if (settings.sync.url)
-				{		
-					// Start by initializing a request
-					updateCount(updateIcon, updateIcon);
-					
-					// Initialize alarm
-					setupAlarm();
-				}
-			});
+			if (settings.sync.url)
+			{		
+				// Start by initializing a request
+				updateCount(updateIcon, updateIcon);
+				
+				// Initialize alarm
+				setupAlarm();
+			}
 		});
 	}
 	
